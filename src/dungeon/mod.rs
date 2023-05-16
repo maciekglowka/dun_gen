@@ -4,9 +4,11 @@ use std::collections::HashSet;
 use crate::vectors::Vector2Int;
 
 mod area;
+mod room;
 mod tunnels;
 
-pub use area::{Area, Room};
+pub use area::Area;
+pub use room::{Room, RoomGenerator};
 pub use tunnels::Tunneler;
 
 

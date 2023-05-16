@@ -13,7 +13,7 @@ pub enum Tunneler {
 }
 
 impl Tunneler {
-    pub fn get_connector(&self) -> fn(Vector2Int, Vector2Int) -> Vec<Vector2Int> {
+    pub fn get_connector(&self) -> impl Fn(Vector2Int, Vector2Int) -> Vec<Vector2Int> {
         match self {
             Self::LShape => l_shape_connector,
             Self::Weighted => weighted_connector
