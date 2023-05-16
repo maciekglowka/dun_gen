@@ -84,7 +84,7 @@ impl Dungeon {
     }
     fn position_areas(&mut self) {
         let column_count = self.rows[0].len();
-        let spacing = 2;
+        let spacing = 4;
 
         // calculate area offsets based on row / column
         let column_widths = (0..column_count).map(|i| 

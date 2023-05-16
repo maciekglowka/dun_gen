@@ -56,52 +56,6 @@ impl Area {
             self.join_internal_rooms(&rooms[connection.0], &rooms[connection.1], None);
         }
         self.rooms = rooms;
-        // let mut rng = thread_rng();
-        // self.paths = Vec::new();
-
-        // // first room
-        // let mut rooms = vec![Room::new(
-        //     Vector2Int::new(0, 0),
-        //     Vector2Int::new(self.get_room_dim(&mut rng), self.get_room_dim(&mut rng))
-        // )];
-
-        // for _ in 0..self.room_count - 1 {
-        //     loop {
-        //         // take a random existing room as a reference
-        //         let prev = rooms.choose(&mut rng).unwrap();
-        //         let c = prev.centre();
-        //         // define bounds for the new room's corner
-        //         let d = self.room_dim_max as i32;
-
-        //         let a = Vector2Int::new(rng.gen_range(c.x-d..=c.x+d), rng.gen_range(c.y-d..=c.y+d));
-
-        //         // find a direction for the second room corner (outwards from the reference room)
-        //         let mut dv = (a - c).clamped();
-        //         if dv.x == 0 { dv.x = *[-1, 1].choose(&mut rng).unwrap() }
-        //         if dv.y == 0 { dv.y = *[-1, 1].choose(&mut rng).unwrap() }
-
-        //         // get second corner
-        //         let w = self.get_room_dim(&mut rng);
-        //         let h = self.get_room_dim(&mut rng);
-        //         let b = a + Vector2Int::new(dv.x * w, dv.y * h);
-  
-        //         let r = Room::new(a, b);
-        //         // if the room overlaps another generate it again
-        //         if rooms.iter().any(|other| r.intersects(other)) { continue };
-        //         self.join_internal_rooms(prev, &r, None);
-
-        //         // try second connection
-        //         let other = rooms.choose(&mut rng).unwrap();
-        //         if other != prev {
-        //             self.join_internal_rooms(rooms.choose(&mut rng).unwrap(), &r, Some(3*self.room_dim_max));
-        //         }
-
-        //         // room is valid, push it and break the loop
-        //         rooms.push(r);
-        //         break;
-        //     }    
-        // }
-        // self.rooms = rooms;
     }
     fn join_internal_rooms(&mut self, a: &Room, b: &Room, max_length: Option<u32>) {
         let path = a.join(b, &self.tunneler);

@@ -7,8 +7,8 @@ use dungeon::{Area, Dungeon, Tunneler, RoomGenerator};
 fn main() {
     let mut d = Dungeon::new();
     d.add_area(Area::new(RoomGenerator::Grow { count: 4, min_size: 3, max_size: 6 }, Tunneler::Weighted));
-    d.add_area(Area::new(RoomGenerator::Grow { count: 3, min_size: 6, max_size: 6 }, Tunneler::Weighted));
-    d.add_area(Area::new(RoomGenerator::Grow { count: 5, min_size: 2, max_size: 4 }, Tunneler::LShape));
+    d.add_area(Area::new(RoomGenerator::Chamber { min_size: 12, max_size: 15 }, Tunneler::Weighted));
+    d.add_area(Area::new(RoomGenerator::GrowSeparated { count: 5, min_size: 2, max_size: 4 }, Tunneler::LShape));
     d.add_area(Area::new(RoomGenerator::Grow { count: 4, min_size: 3, max_size: 6 }, Tunneler::Weighted));
 
     d.generate();

@@ -32,12 +32,16 @@ impl Room {
     pub fn centre(&self) -> Vector2Int {
         Vector2Int::new((self.b.x+self.a.x) / 2, (self.b.y+self.a.y) / 2)
     }
-    pub fn intersects(&self, other: &Room) -> bool {
+    pub fn intersects(&self, other: &Room, border: Option<i32>) -> bool {
+        let b = match border {
+            Some(a) => a,
+            None => 0
+        };
         !(
-            other.a.x > self.b.x ||
-            other.b.x < self.a.x ||
-            other.a.y > self.b.y ||
-            other.b.y < self.a.y
+            other.a.x > self.b.x + b ||
+            other.b.x < self.a.x - b ||
+            other.a.y > self.b.y + b ||
+            other.b.y < self.a.y - b
         )
     }
     pub fn join(&self, other: &Room, tunneler: &Tunneler) -> Vec<Vector2Int> {
@@ -57,24 +61,50 @@ impl Room {
     }
 }
 
+pub type GeneratorFunc<'a> = Box<dyn Fn() -> (Vec<Room>, Vec<(usize, usize)>) + 'a>;
+
 pub enum RoomGenerator {
-    Grow { count: u32, min_size: u32, max_size: u32 }
+    Chamber { min_size: u32, max_size: u32 },
+    Grow { count: u32, min_size: u32, max_size: u32 },
+    GrowSeparated { count: u32, min_size: u32, max_size: u32 },
 }
 impl RoomGenerator {
-    pub fn get_generator(&self) -> impl Fn() -> (Vec<Room>, Vec<(usize, usize)>) + '_ {
+    // returns a vec of rooms and a vec of connection indexes
+    pub fn get_generator<'a>(&'a self) -> GeneratorFunc {
         match self {
-            Self::Grow {count, min_size, max_size } => || {
-                grow_generator(*count, *min_size, *max_size)
-            }
+            Self::Grow {count, min_size, max_size } => Box::new(|| {
+                grow_generator(*count, *min_size, *max_size, None)
+            }) as GeneratorFunc,
+            Self::GrowSeparated {count, min_size, max_size } => Box::new(|| {
+                grow_generator(*count, *min_size, *max_size, Some(2))
+            }) as GeneratorFunc,
+            Self::Chamber { min_size, max_size } => Box::new(|| {
+                chamber_generator(*min_size, *max_size)
+            }) as GeneratorFunc
         }
     }
 }
 
+pub fn chamber_generator(min_size: u32, max_size: u32)
+-> (Vec<Room>, Vec<(usize, usize)>) {
+    let w = get_random_dim(min_size, max_size);
+    let h = get_random_dim(min_size, max_size);
+
+    let chamber = Room::new(Vector2Int::new(0,0), Vector2Int::new(w, h));
+    (vec![chamber], Vec::new())
+}
+
 pub fn grow_generator(
-    count: u32, min_size: u32, max_size: u32
+    count: u32, min_size: u32, max_size: u32, room_border: Option<i32>
 ) -> (Vec<Room>, Vec<(usize, usize)>) {
     let mut rng = thread_rng();
     let mut connections = Vec::new();
+
+    // bounds const for searching new room's corner
+    let d = match room_border {
+        None => max_size as i32,
+        Some(a) => max_size as i32 + a
+    };
 
     // first room
     let mut rooms = vec![Room::new(
@@ -88,8 +118,6 @@ pub fn grow_generator(
             let prev_idx = rng.gen_range(0..rooms.len());
             let prev = &rooms[prev_idx];
             let c = prev.centre();
-            // define bounds for the new room's corner
-            let d = max_size as i32;
 
             let a = Vector2Int::new(rng.gen_range(c.x-d..=c.x+d), rng.gen_range(c.y-d..=c.y+d));
 
@@ -105,7 +133,7 @@ pub fn grow_generator(
 
             let r = Room::new(a, b);
             // if the room overlaps another generate it again
-            if rooms.iter().any(|other| r.intersects(other)) { continue };
+            if rooms.iter().any(|other| r.intersects(other, room_border)) { continue };
 
             // add connection to the base room
             let cur_idx = rooms.len();
