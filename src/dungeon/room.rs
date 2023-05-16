@@ -76,7 +76,7 @@ impl RoomGenerator {
                 grow_generator(*count, *min_size, *max_size, None)
             }) as GeneratorFunc,
             Self::GrowSeparated {count, min_size, max_size } => Box::new(|| {
-                grow_generator(*count, *min_size, *max_size, Some(2))
+                grow_generator(*count, *min_size, *max_size, Some(3))
             }) as GeneratorFunc,
             Self::Chamber { min_size, max_size } => Box::new(|| {
                 chamber_generator(*min_size, *max_size)
