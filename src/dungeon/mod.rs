@@ -7,7 +7,7 @@ mod area;
 mod room;
 mod tunnels;
 
-pub use area::Area;
+pub use area::{Area, ConnectionStrategy};
 pub use room::{Room, RoomGenerator};
 pub use tunnels::Tunneler;
 
@@ -43,7 +43,7 @@ impl Dungeon {
     }
     pub fn save_img(&self, path: &str, scale: u32) {
         let size = self.get_dim();
-        let mut buf: image::RgbImage = ImageBuffer::new(size.x as u32, size.y as u32);
+        let mut buf: image::RgbImage = ImageBuffer::new(size.x as u32 + 1, size.y as u32 + 1);
 
         for (x, y, pixel) in buf.enumerate_pixels_mut() {
             if self.tiles.contains(&Vector2Int::new(x as i32, y as i32)) {

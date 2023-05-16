@@ -100,7 +100,7 @@ pub fn grow_generator(
     let mut rng = thread_rng();
     let mut connections = Vec::new();
 
-    // bounds const for searching new room's corner
+    // bounds const for searching new room's corner around the base room
     let d = match room_border {
         None => max_size as i32,
         Some(a) => max_size as i32 + a
@@ -135,14 +135,9 @@ pub fn grow_generator(
             // if the room overlaps another generate it again
             if rooms.iter().any(|other| r.intersects(other, room_border)) { continue };
 
-            // add connection to the base room
+            // add a connection to the base room
             let cur_idx = rooms.len();
             connections.push((prev_idx, cur_idx));
-            // try a second connection
-            let other_idx = rng.gen_range(0..rooms.len());
-            if other_idx != prev_idx {
-                connections.push((other_idx, cur_idx));
-            }
 
             // room is valid, push it and break the loop
             rooms.push(r);

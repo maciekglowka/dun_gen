@@ -1,3 +1,4 @@
+use rand::prelude::*;
 use crate::vectors::Vector2Int;
 
 use super::room::{Room, RoomGenerator};
@@ -8,16 +9,19 @@ pub struct Area {
     pub rooms: Vec<Room>,
     pub paths: Vec<Vec<Vector2Int>>,
     pub tunneler: Tunneler,
-    pub room_generator: RoomGenerator
+    pub room_generator: RoomGenerator,
+    pub connection_strategy: ConnectionStrategy
 }
 impl Area {
     pub fn new(
         room_generator: RoomGenerator,
-        tunneler: Tunneler
+        tunneler: Tunneler,
+        connection_strategy: ConnectionStrategy
     ) -> Area {
         Area {
             room_generator,
             tunneler,
+            connection_strategy,
             rooms: Vec::new(),
             paths: Vec::new()
         }
@@ -52,18 +56,18 @@ impl Area {
     }
     pub fn generate_rooms(&mut self) {
         let (rooms, connections) = self.room_generator.get_generator()();
-        for connection in connections {
-            self.join_internal_rooms(&rooms[connection.0], &rooms[connection.1], None);
-        }
+        
+        // generate connections
+        self.paths = self.connection_strategy.get_connections_generator()(&self.tunneler, &rooms, &connections);
         self.rooms = rooms;
     }
-    fn join_internal_rooms(&mut self, a: &Room, b: &Room, max_length: Option<u32>) {
-        let path = a.join(b, &self.tunneler);
-        if let Some(max_length) = max_length {
-            if path.len() > max_length as usize { return }
-        }
-        self.paths.push(path);
-    }
+    // fn join_internal_rooms(&mut self, a: &Room, b: &Room, max_length: Option<u32>) {
+    //     let path = a.join(b, &self.tunneler);
+    //     if let Some(max_length) = max_length {
+    //         if path.len() > max_length as usize { return }
+    //     }
+    //     self.paths.push(path);
+    // }
     fn get_closest_rooms<'a>(&'a self, other: &'a Area) -> (&'a Room, &'a Room) {
         // find closest room pair between two areas
         // based on corner distances
@@ -87,4 +91,46 @@ impl Area {
         let rooms = self.get_closest_rooms(other);
         rooms.0.join(rooms.1, &self.tunneler)
     }
+}
+
+pub type ConnectionsGenerator<'a> = Box<dyn Fn(&Tunneler, &Vec<Room>, &Vec<(usize, usize)>) -> Vec<Vec<Vector2Int>> + 'a>;
+
+pub enum ConnectionStrategy {
+    Basic,
+    Secondary(usize)
+}
+impl ConnectionStrategy {
+    pub fn get_connections_generator(&self) -> ConnectionsGenerator {
+        match self {
+            Self::Basic => Box::new(
+                |tunneler: &Tunneler, rooms: &Vec<Room>, required: &Vec<(usize, usize)>| { get_neccessary_connections(tunneler, rooms, required) }
+            ) as ConnectionsGenerator,
+            Self::Secondary(max_dist) => Box::new(
+                |tunneler: &Tunneler, rooms: &Vec<Room>, required: &Vec<(usize, usize)>| { get_with_secondary(tunneler, rooms, required, *max_dist) }
+            ) as ConnectionsGenerator,
+        }
+    }
+}
+
+fn get_neccessary_connections(
+    tunneler: &Tunneler, rooms: &Vec<Room>, connections: &Vec<(usize, usize)>
+) -> Vec<Vec<Vector2Int>> {
+    connections.iter()
+        .map(|conn| rooms[conn.0].join(&rooms[conn.1], tunneler))
+        .collect()
+}
+
+fn get_with_secondary(
+    tunneler: &Tunneler, rooms: &Vec<Room>, required: &Vec<(usize, usize)>, max_dist: usize
+) -> Vec<Vec<Vector2Int>> {
+    let mut rng = thread_rng();
+    let mut paths = get_neccessary_connections(tunneler, rooms, required);
+    for idx in 0..rooms.len() {
+        let other_idx = rng.gen_range(0..rooms.len());
+        if other_idx == idx { continue }
+        let path = rooms[idx].join(&rooms[other_idx], tunneler);
+        if path.len() > max_dist { continue };
+        paths.push(path);
+    };
+    paths
 }
